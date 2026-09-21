@@ -1,0 +1,2075 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Bhanie Smart FGD — Status Generator</title>
+
+<!-- External Frameworks -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<!-- Google Font: Poppins -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button, input, textarea, select {
+    font-family: inherit;
+}
+
+/* Glassmorphism Card System */
+.panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+}
+
+.field {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 12px;
+    outline: none;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.field:focus {
+    background: #ffffff;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.mode-btn {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    transition: all 0.2s ease;
+    min-height: 44px;
+}
+
+.mode-btn.active {
+    color: #ffffff;
+    background: #4f46e5;
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.fgd-chip {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    text-align: left;
+    transition: all 0.15s ease;
+    min-height: 54px;
+    position: relative;
+    cursor: pointer;
+}
+
+.fgd-chip:hover {
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
+
+.fgd-chip.active {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
+}
+
+.theme-pill {
+    transition: all 0.2s ease;
+    min-height: 44px;
+}
+
+.theme-pill.active {
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px #4f46e5;
+    transform: scale(1.02);
+}
+
+.status-canvas-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9/16;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #071126;
+    box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.35);
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Toast animation */
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-item {
+    animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media(min-width: 1024px) {
+    .sticky-preview {
+        position: sticky;
+        top: 80px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+HEADER
+========================================================= -->
+<header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
+                B
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5">
+                    <h1 class="text-sm font-extrabold text-slate-900 tracking-tight">Bhanie Smart FGD</h1>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">PRO CLEAN 3.5</span>
+                </div>
+                <p class="text-[10px] text-slate-500">
+                    Screenshot SPV → Parser Tabel FGD 1–6 → Status WhatsApp (1080×1920)
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button
+                id="demoBtn"
+                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+            >
+                <i data-lucide="play" class="w-3.5 h-3.5 text-indigo-600 fill-indigo-600"></i>
+                <span>Contoh Data</span>
+            </button>
+
+            <span
+                id="appStatusBadge"
+                class="text-[10px] font-extrabold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+            >
+                SIAP
+            </span>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto p-3 sm:p-5 pb-24">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-8 items-start">
+
+        <!-- =========================================================
+        KIRI: KONTROL, UPLOAD, PILIH FGD & REVIEW
+        ========================================================= -->
+        <section class="space-y-4">
+
+            <!-- STEP 1: MODE OFFLINE / ONLINE -->
+            <div class="panel p-3.5">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-[10px] uppercase tracking-widest text-indigo-600 font-bold">
+                        LANGKAH 1 • METODE PELAKSANAAN
+                    </p>
+                    <span id="modeStatusText" class="text-[10px] font-bold text-emerald-700">Offline Onsite</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button
+                        id="offlineTabBtn"
+                        class="mode-btn active rounded-xl py-2.5 text-xs font-extrabold flex items-center justify-center gap-2"
+                    >
+                        <span>🟩</span>
+                        <span>OFFLINE</span>
+                    </button>
+
+                    <button
+                        id="onlineTabBtn"
+                        class="mode-btn rounded-xl py-2.5 text-xs font-extrabold flex items-center justify-center gap-2"
+                    >
+                        <span>⬜</span>
+                        <span>ONLINE</span>
+                    </button>
+                </div>
+
+                <p id="modeExplanation" class="text-[11px] text-slate-500 mt-2 px-1 leading-snug">
+                    <b>Offline:</b> Responden wajib hadir langsung ke venue/lokasi FGD yang telah ditentukan.
+                </p>
+            </div>
+
+            <!-- STEP 2: UPLOAD SCREENSHOT SPV -->
+            <div class="panel p-4">
+                <div class="flex gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <i data-lucide="scan-search" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-slate-900">
+                            LANGKAH 2 • Upload Screenshot SPV
+                        </h2>
+                        <p class="text-[10px] text-slate-500">
+                            Pilih gambar tabel SPV, drag & drop, atau tekan langsung <b>Ctrl + V</b>
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    id="dropZoneArea"
+                    class="relative block border-2 border-dashed border-slate-300 rounded-2xl p-5 text-center bg-slate-50 hover:bg-indigo-50/60 hover:border-indigo-400 cursor-pointer transition"
+                >
+                    <input
+                        id="screenshotInput"
+                        type="file"
+                        accept="image/*"
+                        class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                    >
+
+                    <div id="dropEmptyState" class="pointer-events-none">
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-white shadow-sm flex items-center justify-center mb-2 text-indigo-600">
+                            <i data-lucide="image-plus" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-800">
+                            Pilih Screenshot SPV / Paste Gambar
+                        </p>
+                        <p class="text-[10px] text-slate-400 mt-1">
+                            Format JPG / PNG / WebP (Tabel kolom terbaca jelas)
+                        </p>
+                    </div>
+
+                    <div id="dropFilledState" class="hidden pointer-events-none">
+                        <img
+                            id="previewImgTag"
+                            class="max-h-52 max-w-full mx-auto rounded-xl object-contain shadow-sm bg-slate-900/5"
+                            alt="Screenshot SPV"
+                        >
+                        <p
+                            id="fileNamePreview"
+                            class="text-[10px] font-mono text-slate-500 mt-2 truncate max-w-xs mx-auto"
+                        ></p>
+                    </div>
+                </div>
+
+                <!-- PROGRESS BAR OCR -->
+                <div id="ocrBox" class="hidden mt-3">
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span id="ocrMsg" class="font-bold text-indigo-600 flex items-center gap-1.5">
+                            <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Menyiapkan OCR...
+                        </span>
+                        <span id="ocrPct" class="font-mono text-slate-600 font-bold">0%</span>
+                    </div>
+
+                    <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                            id="ocrBarFill"
+                            class="h-full bg-indigo-600 transition-all duration-150"
+                            style="width:0%"
+                        ></div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex gap-2">
+                    <button
+                        id="runAnalysisBtn"
+                        disabled
+                        class="flex-1 py-3.5 rounded-xl bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold shadow-md shadow-indigo-600/20 active:scale-[0.99] transition flex justify-center items-center gap-2 text-xs sm:text-sm"
+                    >
+                        <i data-lucide="scan-text" class="w-4 h-4"></i>
+                        <span>ANALISIS SCREENSHOT TABEL</span>
+                    </button>
+
+                    <button
+                        id="clearImageBtn"
+                        title="Hapus / Reset"
+                        class="px-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition flex items-center justify-center"
+                    >
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: PILIH FGD (1–6 SAJA DENGAN STATUS INDIKATOR) -->
+            <div id="fgdSelectionSection" class="panel p-4 hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-indigo-600 font-bold">
+                            LANGKAH 3 • PILIH SESI FGD
+                        </p>
+                        <h2 class="text-sm font-extrabold text-slate-900">
+                            Pilih FGD untuk Status WhatsApp
+                        </h2>
+                    </div>
+                    <span id="fgdSummaryBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                        0 Sesi
+                    </span>
+                </div>
+
+                <p class="text-[11px] text-slate-500 mb-3">
+                    Setiap FGD berdiri sendiri dan dapat diunduh kapan saja:
+                </p>
+
+                <div id="fgdButtonContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+            </div>
+
+            <!-- STEP 4: REVIEW & EDIT DATA TERSTRUKTUR -->
+            <div id="dataEditorSection" class="panel p-4 hidden">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-indigo-600 font-bold">
+                            LANGKAH 4 • PERIKSA & KOREKSI DATA
+                        </p>
+                        <h2 class="text-sm font-extrabold text-slate-900">
+                            Review Data Sebelum Generate
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span id="activeFgdTag" class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 text-[11px] font-extrabold">
+                            FGD 1
+                        </span>
+                        <span id="activeFgdQuality" class="text-[10px] font-bold px-2 py-0.5 rounded-md"></span>
+                    </div>
+                </div>
+
+                <!-- JUDUL STATUS UTAMA -->
+                <div>
+                    <label class="text-[10px] font-bold text-slate-700 block mb-1">
+                        Judul Utama Status
+                    </label>
+                    <select id="mainTitleType" class="field">
+                        <option value="DICARI RESPONDEN FGD">DICARI RESPONDEN FGD</option>
+                        <option value="INFO FGD">INFO FGD</option>
+                        <option value="REKRUTMEN RESPONDEN">REKRUTMEN RESPONDEN</option>
+                        <option value="CUSTOM">-- TULIS JUDUL SENDIRI --</option>
+                    </select>
+                    <input
+                        id="customTitleVal"
+                        class="field mt-2 hidden"
+                        placeholder="Contoh: DICARI PESERTA RISET"
+                    >
+                </div>
+
+                <!-- SUBTITLE / NAMA STUDI -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-slate-700">
+                            Sub-Judul / Topik Studi
+                        </label>
+                        <span class="text-[9px] text-slate-400">Otomatis wrap jika panjang</span>
+                    </div>
+                    <input
+                        id="studyTopicVal"
+                        class="field"
+                        placeholder="Contoh: Consumer Research Study"
+                        value="Consumer Research Study"
+                    />
+                </div>
+
+                <!-- CARD 1: TARGET PROFIL (GENDER & USIA DEWASA) -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-slate-700">
+                            Profil Target (Card Kiri)
+                        </label>
+                        <span id="targetConfBadge" class="text-[9px] font-bold"></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[9px] text-slate-500 block mb-0.5">👤 Gender</span>
+                            <input id="inputGender" class="field" placeholder="Belum terbaca" />
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-500 block mb-0.5">🎂 Usia Responden (Dewasa)</span>
+                            <input id="inputAdultAge" class="field" placeholder="Belum terbaca" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USIA ANAK (OPSIONAL) -->
+                <div class="mt-3" id="childAgeRow">
+                    <label class="text-[10px] font-bold text-slate-700 block mb-0.5">
+                        👶 Usia Anak (Khusus target Moms with Kids)
+                    </label>
+                    <input id="inputChildAge" class="field" placeholder="Kosongkan jika tidak ada target anak" />
+                </div>
+
+                <!-- CARD 2: KELAS & PEKERJAAN -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-slate-700">
+                            Kelas & Pekerjaan (Card Kanan)
+                        </label>
+                        <span id="classConfBadge" class="text-[9px] font-bold"></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-[9px] text-slate-500 block mb-0.5">🏷️ SES</span>
+                            <input id="inputSes" class="field" placeholder="SES belum terbaca" />
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-500 block mb-0.5">💼 Pekerjaan / Status</span>
+                            <input id="inputOccupation" class="field" placeholder="Pekerjaan belum terbaca" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JADWAL (HARI, TANGGAL & JAM) -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-slate-700">
+                            📅 Jadwal Pelaksanaan (Terpisah dari Kriteria)
+                        </label>
+                        <span id="scheduleConfBadge" class="text-[9px] font-bold"></span>
+                    </div>
+                    <input id="inputSchedule" class="field" placeholder="Belum ditentukan" />
+                </div>
+
+                <!-- LOKASI / METODE -->
+                <div class="mt-3">
+                    <label class="text-[10px] font-bold text-slate-700 block mb-1">
+                        📍 Lokasi / Metode Pelaksanaan
+                    </label>
+                    <input id="inputLocation" class="field" placeholder="Metode pelaksanaan" />
+                </div>
+
+                <!-- KRITERIA UTAMA -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-slate-700">
+                            📝 Kriteria Utama Responden (Dinamis &amp; Terbaca Jelas)
+                        </label>
+                        <button
+                            id="cleanCriteriaBtn"
+                            type="button"
+                            class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
+                        >
+                            <i data-lucide="sparkles" class="w-3 h-3"></i> Rapikan &amp; Buang Duplikat
+                        </button>
+                    </div>
+                    <textarea
+                        id="inputCriteria"
+                        rows="7"
+                        class="field text-[12px] leading-relaxed"
+                        placeholder="• Target: ...&#10;• Gender: ...&#10;• Usia: ..."
+                    ></textarea>
+                    <p class="text-[9px] text-slate-400 mt-0.5">
+                        *Fee, reward, tanda hubung menggantung (-), dan duplikat otomatis dibersihkan dari status.
+                    </p>
+                </div>
+
+                <!-- AUDIT STATUS BOX (INFORMASIONAL, TIDAK MEMBLOKIR) -->
+                <div id="auditStatusBox" class="mt-3 rounded-xl p-3 text-[11px] leading-snug"></div>
+
+                <!-- STEP 5 TRIGGER BUTTON -->
+                <button
+                    id="applyToCanvasBtn"
+                    class="w-full mt-4 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-md shadow-indigo-600/25 active:scale-[0.99] transition flex items-center justify-center gap-2 text-xs sm:text-sm"
+                >
+                    <i data-lucide="wand-sparkles" class="w-4 h-4"></i>
+                    <span>LANGKAH 5 • TAMPILKAN STATUS KE CANVAS</span>
+                </button>
+            </div>
+
+            <!-- INPUT MANUAL JIKA SCREENSHOT BURAM -->
+            <details class="panel overflow-hidden group">
+                <summary class="p-3.5 cursor-pointer flex items-center justify-between select-none bg-slate-50 hover:bg-slate-100 transition">
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">
+                            Input Manual / Tempel Teks SPV
+                        </p>
+                        <p class="text-[10px] text-slate-500">
+                            Gunakan bila gambar buram atau format tabel tidak beraturan.
+                        </p>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                </summary>
+
+                <div class="p-3.5 border-t border-slate-200">
+                    <textarea
+                        id="rawManualText"
+                        rows="6"
+                        class="field text-xs font-mono"
+                        placeholder="FGD 1
+Jadwal: Selasa, 22 September 2026 • 09.30
+Demografi: MOMS WITH KIDS
+Perempuan
+Usia: 28–33 tahun
+Usia Anak: 6–9 tahun
+SES: A–B
+Pekerjaan: IRT / Bekerja
+Kriteria: Pengguna aktif sereal sarapan"
+                    ></textarea>
+
+                    <button
+                        id="processManualBtn"
+                        class="w-full mt-2.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    >
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>PROSES TEKS MANUAL</span>
+                    </button>
+                </div>
+            </details>
+
+            <!-- TEMA WARNA CANVAS -->
+            <div class="panel p-3.5">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs font-bold text-slate-800">
+                        🎨 Tema Warna Visual Status
+                    </label>
+                    <span class="text-[9px] text-slate-400 font-mono">
+                        Font Poppins • HD 1080×1920
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2">
+                    <button
+                        class="theme-pill active h-11 rounded-xl bg-gradient-to-br from-blue-950 to-indigo-900 border border-indigo-500/30 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                        data-theme="corporate"
+                    >
+                        Navy Tech
+                    </button>
+
+                    <button
+                        class="theme-pill h-11 rounded-xl bg-gradient-to-br from-slate-950 to-slate-800 border border-slate-600/40 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                        data-theme="elegant"
+                    >
+                        Dark Steel
+                    </button>
+
+                    <button
+                        class="theme-pill h-11 rounded-xl bg-gradient-to-br from-purple-950 via-purple-900 to-pink-800 border border-pink-500/30 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                        data-theme="creative"
+                    >
+                        Berry Plum
+                    </button>
+
+                    <button
+                        class="theme-pill h-11 rounded-xl bg-gradient-to-br from-teal-950 via-teal-900 to-emerald-800 border border-emerald-500/30 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                        data-theme="fresh"
+                    >
+                        Deep Teal
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- =========================================================
+        KANAN: LIVE PREVIEW & DOWNLOAD (SELALU TERSEDIA)
+        ========================================================= -->
+        <section class="sticky-preview space-y-4">
+            <div class="flex justify-between items-center px-1">
+                <div>
+                    <p class="text-[10px] uppercase tracking-widest text-indigo-600 font-bold">
+                        HASIL STATUS WHATSAPP
+                    </p>
+                    <h2 class="text-sm font-extrabold text-slate-900">
+                        Live Preview (Rasio 9:16)
+                    </h2>
+                </div>
+
+                <span class="text-[9px] bg-white border border-slate-200 text-slate-600 font-mono px-2.5 py-1 rounded-full shadow-sm">
+                    1080 × 1920 Adaptive
+                </span>
+            </div>
+
+            <div class="bg-slate-200/90 p-2 sm:p-4 rounded-2xl border border-slate-300/80 flex justify-center shadow-inner">
+                <div class="status-canvas-box max-w-[340px] sm:max-w-[360px]">
+                    <canvas
+                        id="statusCanvas"
+                        width="1080"
+                        height="1920"
+                    ></canvas>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button
+                    id="downloadImageBtn"
+                    class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-lg shadow-indigo-600/30 active:scale-[0.99] transition flex items-center justify-center gap-2 text-sm"
+                >
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                    <span>SIMPAN GAMBAR HD (1080×1920)</span>
+                </button>
+
+                <p class="text-[10px] text-center text-slate-500">
+                    *Download selalu aktif. Gambar langsung pas untuk Status WhatsApp &amp; Story Instagram.
+                </p>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<!-- In-App Toast Container -->
+<div id="toastRoot" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+<script>
+'use strict';
+
+/* =========================================================
+1. APP STATE & CONSTANTS
+========================================================= */
+const app = {
+    mode: 'offline', // 'offline' | 'online'
+    sourceImage: null,
+    rawText: '',
+    fgdList: [],     // strictly FGD 1 through 6 objects
+    currentFgd: null,
+    theme: 'corporate'
+};
+
+// Canvas Safe Zone Bounds for 1080x1920
+const SAFE_BOUNDS = {
+    xMin: 60,
+    xMax: 1020,
+    width: 960,
+    yMin: 60,
+    yMax: 1860,
+    padding: 44
+};
+
+const THEMES = {
+    corporate: {
+        bg1: '#060d1f',
+        bg2: '#16224f',
+        accent: '#52a2ff',
+        text: '#ffffff',
+        muted: '#9fb1d4',
+        card: 'rgba(7, 15, 38, 0.88)',
+        border: 'rgba(82, 162, 255, 0.38)',
+        cardInner: 'rgba(30, 58, 110, 0.28)'
+    },
+    elegant: {
+        bg1: '#090d14',
+        bg2: '#202734',
+        accent: '#e2e8f0',
+        text: '#ffffff',
+        muted: '#cbd5e1',
+        card: 'rgba(10, 14, 22, 0.90)',
+        border: 'rgba(226, 232, 240, 0.22)',
+        cardInner: 'rgba(255, 255, 255, 0.06)'
+    },
+    creative: {
+        bg1: '#270a3c',
+        bg2: '#68114c',
+        accent: '#ff8fd2',
+        text: '#ffffff',
+        muted: '#f0c1e1',
+        card: 'rgba(35, 7, 48, 0.88)',
+        border: 'rgba(255, 143, 210, 0.34)',
+        cardInner: 'rgba(255, 143, 210, 0.12)'
+    },
+    fresh: {
+        bg1: '#042d2a',
+        bg2: '#065846',
+        accent: '#5ef3bb',
+        text: '#ffffff',
+        muted: '#bbf2dd',
+        card: 'rgba(3, 33, 30, 0.88)',
+        border: 'rgba(94, 243, 187, 0.34)',
+        cardInner: 'rgba(94, 243, 187, 0.12)'
+    }
+};
+
+/* =========================================================
+2. DOM HELPER & TOAST NOTIFICATION
+========================================================= */
+const $ = id => document.getElementById(id);
+const canvas = $('statusCanvas');
+const ctx = canvas.getContext('2d');
+
+function notify(msg, level = 'info') {
+    const root = $('toastRoot');
+    const item = document.createElement('div');
+    const icon = level === 'success' ? 'check-circle' : level === 'error' ? 'alert-triangle' : 'info';
+    const color = level === 'success' ? 'bg-emerald-950 border-emerald-500 text-emerald-100' :
+                  level === 'error' ? 'bg-rose-950 border-rose-500 text-rose-100' :
+                  'bg-slate-900 border-indigo-500 text-slate-100';
+
+    item.className = `toast-item pointer-events-auto flex items-center gap-2 px-3.5 py-2.5 rounded-xl border shadow-xl text-xs font-semibold ${color}`;
+    item.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i><span>${msg}</span>`;
+
+    root.appendChild(item);
+    lucide.createIcons();
+
+    setTimeout(() => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(10px)';
+        item.style.transition = 'all 0.22s ease';
+        setTimeout(() => item.remove(), 240);
+    }, 3400);
+}
+
+/**
+ * Helper: Present clean fallback strictly for DISPLAY, never mutating parsed data.
+ */
+function safeValue(val, fallback = 'Belum terbaca') {
+    if (!val || typeof val !== 'string') return fallback;
+    const cleanStr = val.trim();
+    return cleanStr.length > 0 ? cleanStr : fallback;
+}
+
+/* =========================================================
+3. NON-STATEFUL PURGE & GARBAGE FILTERS + DANGLING CLEANER
+========================================================= */
+const FORBIDDEN_TOKENS = [
+    /\bfee\b/i,
+    /\breward\b/i,
+    /\bhonor\b/i,
+    /\binsentif\b/i,
+    /\bgoodie\s*bag\b/i,
+    /\bkompensasi\b/i,
+    /\buang\s*transport\b/i,
+    /\buang\s*saku\b/i,
+    /\b(?:rp|idr)\.?\s*[\d.,kK]+/i
+];
+
+function containsForbiddenData(text) {
+    if (!text) return false;
+    return FORBIDDEN_TOKENS.some(pattern => pattern.test(text));
+}
+
+function stripForbiddenTerms(text) {
+    if (!text) return '';
+    let result = text;
+    for (const pattern of FORBIDDEN_TOKENS) {
+        result = result.replace(new RegExp(pattern.source, 'gi'), '');
+    }
+    return result.replace(/\s{2,}/g, ' ').trim();
+}
+
+function isLikelyOcrGarbage(token) {
+    if (!token || typeof token !== 'string') return true;
+    const cleanToken = token.trim();
+    if (cleanToken.length < 3) return true;
+
+    // Reject bizarre consecutive symbol blends
+    if (/[!@#$%^&*_=+<>~`|\\]/.test(cleanToken)) return true;
+
+    // Specific known OCR garbage words
+    if (/NOMIEBOL|tkelsa|225ept|jewaMEDIUM|n\s*em\s*I\s*EN|io-i2/i.test(cleanToken)) {
+        return true;
+    }
+
+    // Alphabetic density check
+    const letters = cleanToken.replace(/[^a-zA-Z]/g, '');
+    if (letters.length > 5) {
+        const vowels = letters.match(/[aeiou]/gi);
+        if (!vowels || (vowels.length / letters.length) < 0.16) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Strips dangling punctuation (dangling dash, dangling colon, etc.)
+ */
+function cleanDanglingPunctuation(str) {
+    if (!str) return '';
+    return str
+        .replace(/[:\-–—\s]+$/, '')   // Remove trailing dash, hyphen, colon
+        .replace(/^[:\-–—\s]+/, '')   // Remove leading dash, hyphen, colon
+        .replace(/\s*([:\-–—])\s*$/, '')
+        .trim();
+}
+
+/**
+ * Line-level sanitizer
+ */
+function sanitizeTextLine(line) {
+    if (!line) return '';
+    let clean = line.replace(/[\r\t]+/g, ' ')
+                    .replace(/[|~_—–]{2,}/g, ' ')
+                    .replace(/^[\s•●\-\*\d\.\)]+/, '')
+                    .trim();
+
+    clean = cleanDanglingPunctuation(clean);
+
+    if (containsForbiddenData(clean) || isLikelyOcrGarbage(clean)) return '';
+    return clean;
+}
+
+/**
+ * Advanced criteria deduplication & near-duplicate cleanser
+ */
+function cleanAndDeduplicateCriteria(rawList) {
+    const cleaned = [];
+    const seenKeys = new Map();
+
+    for (const raw of rawList) {
+        const line = sanitizeTextLine(raw);
+        if (!line || line.length < 3) continue;
+
+        // Normalization key for duplicate comparison (ignoring case, minor dashes & numbers)
+        const compareKey = line
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+            .trim();
+
+        if (!compareKey) continue;
+
+        // Check if an existing line is a prefix or close match
+        let isDup = false;
+        for (const [existingKey, idx] of seenKeys.entries()) {
+            if (existingKey === compareKey) {
+                isDup = true;
+                break;
+            }
+            // Check near duplicate where one has trailing dangling artifact
+            if (Math.abs(existingKey.length - compareKey.length) <= 3) {
+                if (existingKey.startsWith(compareKey) || compareKey.startsWith(existingKey)) {
+                    // Pick the cleaner/longer one if current is better
+                    if (line.length > cleaned[idx].length) {
+                        cleaned[idx] = line;
+                    }
+                    isDup = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isDup) {
+            seenKeys.set(compareKey, cleaned.length);
+            cleaned.push(line);
+        }
+    }
+
+    return cleaned;
+}
+
+/* =========================================================
+4. OCR PREPROCESSING & ROW/FGD SEGMENTATION ENGINE
+========================================================= */
+function prepareImageForOcr(img) {
+    const maxDim = 2400;
+    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * scale);
+    c.height = Math.round(img.naturalHeight * scale);
+
+    const cctx = c.getContext('2d', { willReadFrequently: true });
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+
+    const imgData = cctx.getImageData(0, 0, c.width, c.height);
+    const d = imgData.data;
+
+    // High contrast grayscale normalization
+    for (let i = 0; i < d.length; i += 4) {
+        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const contrasted = (gray - 128) * 1.3 + 128;
+        const finalVal = Math.max(0, Math.min(255, contrasted));
+        d[i] = finalVal;
+        d[i + 1] = finalVal;
+        d[i + 2] = finalVal;
+    }
+    cctx.putImageData(imgData, 0, 0);
+    return c;
+}
+
+function normalizeOcrRawText(text) {
+    return (text || '')
+        .replace(/\r/g, '')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+/**
+ * Detects strictly FGD 1 through 6
+ */
+function extractValidFgdIds(rawText) {
+    const detected = new Set();
+    const regex = /\bFGD\s*[-:#]?\s*([1-6])\b/gi;
+    let match;
+    while ((match = regex.exec(rawText)) !== null) {
+        const num = parseInt(match[1], 10);
+        if (num >= 1 && num <= 6) {
+            detected.add(num);
+        }
+    }
+
+    if (detected.size === 0) {
+        const lineMatches = rawText.split('\n');
+        for (const line of lineMatches) {
+            const rowMatch = line.match(/^\s*([1-6])\s+(?:Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu|Moms|Dewasa|SES)/i);
+            if (rowMatch) {
+                const num = parseInt(rowMatch[1], 10);
+                if (num >= 1 && num <= 6) detected.add(num);
+            }
+        }
+    }
+
+    return [...detected].sort((a, b) => a - b);
+}
+
+/**
+ * Isolates text slice for a specific FGD ID (Table row boundary protection)
+ */
+function sliceFgdTableBlock(rawText, id, allIds) {
+    const startRegex = new RegExp(`(?:\\bFGD\\s*[-:#]?\\s*${id}\\b|^\\s*${id}\\s+(?:Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu|Moms|Dewasa))`, 'i');
+    const startIdx = rawText.search(startRegex);
+    if (startIdx < 0) return rawText;
+
+    let endIdx = rawText.length;
+    for (const nextId of allIds) {
+        if (nextId > id) {
+            const nextRegex = new RegExp(`(?:\\bFGD\\s*[-:#]?\\s*${nextId}\\b|^\\s*${nextId}\\s+(?:Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu|Moms|Dewasa))`, 'i');
+            const pos = rawText.search(nextRegex);
+            if (pos > startIdx) {
+                endIdx = pos;
+                break;
+            }
+        }
+    }
+    return rawText.slice(startIdx, endIdx);
+}
+
+/* Specific Field Parsers with Confidence Tracking */
+function parseGenderWithConfidence(blockText) {
+    const lower = blockText.toLowerCase();
+    const female = /\b(?:perempuan|wanita|female|ibu|cewek|moms)\b/i.test(lower);
+    const male = /\b(?:pria|laki-laki|laki laki|male|bapak|cowok)\b/i.test(lower);
+
+    if (female && male) return { value: 'Pria & Perempuan', confidence: 'HIGH' };
+    if (female) return { value: 'Perempuan', confidence: 'HIGH' };
+    if (male) return { value: 'Pria', confidence: 'HIGH' };
+
+    return { value: '', confidence: 'MISSING' };
+}
+
+function parseAgesWithConfidence(blockText) {
+    let adultAge = '';
+    let childAge = '';
+    let confidence = 'MISSING';
+
+    const childMatch = blockText.match(/(?:usia\s*anak|anak\s*usia|anak)\s*[:\-]?\s*([0-9]{1,2}\s*[-–]\s*[0-9]{1,2}(?:\s*(?:th|tahun))?)/i);
+    if (childMatch) {
+        childAge = childMatch[1].replace(/\s+/g, '').replace(/[–]/g, '-') + ' tahun';
+        childAge = cleanDanglingPunctuation(childAge);
+    }
+
+    const ageMatches = [...blockText.matchAll(/\b(?:usia\s*[:\-]?\s*)?([1-9][0-9])\s*[-–]\s*([1-9][0-9])\s*(?:th|tahun)?\b/gi)];
+    const validAdultRanges = [];
+
+    for (const m of ageMatches) {
+        const v1 = parseInt(m[1], 10);
+        const v2 = parseInt(m[2], 10);
+
+        if (v1 >= 17 && v2 <= 65 && v1 < v2) {
+            const rangeStr = `${v1}–${v2} tahun`;
+            if (!validAdultRanges.includes(rangeStr)) validAdultRanges.push(rangeStr);
+        } else if (v1 <= 16 && !childAge) {
+            childAge = `${v1}–${v2} tahun`;
+        }
+    }
+
+    if (validAdultRanges.length > 0) {
+        adultAge = validAdultRanges.slice(0, 2).join(' / ');
+        confidence = 'HIGH';
+    } else if (ageMatches.length > 0) {
+        confidence = 'LOW';
+    }
+
+    return { adultAge, childAge, confidence };
+}
+
+function parseSesWithConfidence(blockText) {
+    const match = blockText.match(/\bSES\s*[:\-]?\s*([A-E](?:\s*[-–/&]\s*[A-E])*)/i);
+    if (!match) return { value: '', confidence: 'MISSING' };
+
+    const cleanVal = match[1].replace(/\s+/g, '').replace(/[–]/g, '-').toUpperCase();
+    return { value: `SES ${cleanDanglingPunctuation(cleanVal)}`, confidence: 'HIGH' };
+}
+
+function parseScheduleWithConfidence(blockText) {
+    const dateMatch = blockText.match(/\b(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)\s*,?\s*(\d{1,2})\s*(?:Jan|Feb|Mar|Apr|Mei|Jun|Jul|Ags|Agu|Agustus|Sept|Sep|September|Okt|Oct|Oktober|Nov|November|Des|Dec|Desember)?\s*(\d{4})?/i);
+    const timeMatch = blockText.match(/\b([01]?\d|2[0-3])[:.][0-5]\d(?:\s*[-–]\s*([01]?\d|2[0-3])[:.][0-5]\d)?(?:\s*(?:WIB|WITA|WIT))?\b/i);
+
+    let scheduleStr = '';
+    let confidence = 'MISSING';
+
+    if (dateMatch) {
+        scheduleStr = dateMatch[0].replace(/\s+/g, ' ').trim();
+        confidence = 'MEDIUM';
+    }
+    if (timeMatch) {
+        const cleanTime = timeMatch[0].replace('.', ':');
+        scheduleStr = scheduleStr ? `${scheduleStr} • ${cleanTime}` : cleanTime;
+        confidence = 'HIGH';
+    }
+
+    return { value: cleanDanglingPunctuation(scheduleStr), confidence };
+}
+
+function parseOccupationWithConfidence(blockText) {
+    const list = [];
+    const occRegex = /(?:^|\n)\s*(?:[•●\-]\s*)?(\d+\s+(?:SMA|Kuliah|Bekerja|Usaha|IRT|PNS|Swasta)[^\n]*)/gi;
+    let match;
+    while ((match = occRegex.exec(blockText)) !== null) {
+        const item = cleanDanglingPunctuation(match[1].trim());
+        if (!list.includes(item)) list.push(item);
+    }
+    if (list.length > 0) return { value: list.join(' • '), confidence: 'HIGH' };
+
+    const roles = [];
+    if (/irt|ibu\s*rumah\s*tangga/i.test(blockText)) roles.push('IRT');
+    if (/bekerja|karyawan|karyawati/i.test(blockText)) roles.push('Bekerja');
+    if (/usaha|wiraswasta|wirausaha/i.test(blockText)) roles.push('Wirausaha');
+    if (/kuliah|mahasiswa|mahasiswi/i.test(blockText)) roles.push('Kuliah');
+
+    if (roles.length > 0) {
+        return { value: roles.join(' / '), confidence: 'MEDIUM' };
+    }
+    return { value: '', confidence: 'MISSING' };
+}
+
+function parseDemographyKeyword(blockText) {
+    const recognized = [
+        'MOMS WITH KIDS', 'DEWASA ENERGEN', 'REMAJA',
+        'REGULAR LAPSERS', 'OCCASIONAL CONSUMPTION',
+        'NON-USERS', 'HEAVY USERS', 'LIGHT USERS'
+    ];
+    const found = [];
+    for (const kw of recognized) {
+        if (blockText.toUpperCase().includes(kw)) found.push(kw);
+    }
+    return [...new Set(found)].join(' / ');
+}
+
+/**
+ * Builds criteria strictly from honest parsed fields (NO hallucinated assumptions)
+ */
+function buildStructuredCriteria(fgd, blockText) {
+    const rawItems = [];
+
+    if (fgd.demography) rawItems.push(`Target: ${fgd.demography}`);
+    if (fgd.gender) rawItems.push(`Gender: ${fgd.gender}`);
+    if (fgd.adultAge) rawItems.push(`Usia: ${fgd.adultAge}`);
+    if (fgd.childAge) rawItems.push(`Usia Anak: ${fgd.childAge}`);
+    if (fgd.ses) rawItems.push(`${fgd.ses}`);
+    if (fgd.occupation) rawItems.push(`Pekerjaan: ${fgd.occupation}`);
+
+    const lines = blockText.split('\n');
+    for (const line of lines) {
+        const clean = sanitizeTextLine(line);
+        if (!clean) continue;
+
+        if (/mengonsumsi|mengkonsumsi|pengguna|sarapan|sereal|skincare|rutin|bersedia|hadir/i.test(clean)) {
+            if (clean.length > 10) {
+                rawItems.push(clean);
+            }
+        }
+    }
+
+    return cleanAndDeduplicateCriteria(rawItems).slice(0, 8);
+}
+
+function parseIsolatedFgd(id, blockText) {
+    const genderData = parseGenderWithConfidence(blockText);
+    const ageData = parseAgesWithConfidence(blockText);
+    const sesData = parseSesWithConfidence(blockText);
+    const scheduleData = parseScheduleWithConfidence(blockText);
+    const occData = parseOccupationWithConfidence(blockText);
+    const demography = parseDemographyKeyword(blockText);
+
+    const fgd = {
+        id,
+        mode: app.mode,
+        gender: genderData.value,
+        adultAge: ageData.adultAge,
+        childAge: ageData.childAge,
+        ses: sesData.value,
+        occupation: occData.value,
+        demography,
+        schedule: scheduleData.value,
+        criteria: [],
+        confidence: {
+            gender: genderData.confidence,
+            age: ageData.confidence,
+            ses: sesData.confidence,
+            schedule: scheduleData.confidence,
+            occupation: occData.confidence
+        }
+    };
+
+    fgd.criteria = buildStructuredCriteria(fgd, blockText);
+    return fgd;
+}
+
+/* =========================================================
+5. REFACTORED ADAPTIVE TYPOGRAPHY & OCCUPANCY ENGINE
+========================================================= */
+function setFont(weight, size) {
+    ctx.font = `${weight} ${size}px 'Poppins', sans-serif`;
+}
+
+function drawSafeRoundedRect(x, y, w, h, r, fill, stroke = null, strokeW = 1) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+
+    if (fill) {
+        ctx.fillStyle = fill;
+        ctx.fill();
+    }
+    if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeW;
+        ctx.stroke();
+    }
+}
+
+/**
+ * Clean multi-line wrapping with accurate canvas measurement
+ */
+function wrapSafeLines(text, maxWidth, fontSize, weight = '400') {
+    setFont(weight, fontSize);
+    const result = [];
+    const paragraphs = String(text || '').split('\n');
+
+    for (const para of paragraphs) {
+        const trimmed = para.trim();
+        if (!trimmed) continue;
+
+        const words = trimmed.split(/\s+/);
+        let curr = '';
+
+        for (const w of words) {
+            const test = curr ? `${curr} ${w}` : w;
+            if (ctx.measureText(test).width > maxWidth && curr) {
+                result.push(curr);
+                curr = w;
+            } else {
+                curr = test;
+            }
+        }
+        if (curr) result.push(curr);
+    }
+    return result;
+}
+
+/**
+ * Adaptive text fitting into a bounded box
+ */
+function fitTextToBox(text, maxWidth, maxLines, startSize, minSize, weight = '700') {
+    let size = startSize;
+    while (size >= minSize) {
+        const lines = wrapSafeLines(text, maxWidth, size, weight);
+        if (lines.length <= maxLines) {
+            let overflow = false;
+            for (const l of lines) {
+                if (ctx.measureText(l).width > maxWidth) {
+                    overflow = true;
+                    break;
+                }
+            }
+            if (!overflow) {
+                return { size, lines };
+            }
+        }
+        size -= 1;
+    }
+
+    // Minimum size reached, clamp lines and truncate if strictly necessary
+    const lines = wrapSafeLines(text, maxWidth, minSize, weight).slice(0, maxLines);
+    if (lines.length > 0) {
+        let lastLine = lines[lines.length - 1];
+        while (lastLine.length > 3 && ctx.measureText(lastLine + '...').width > maxWidth) {
+            lastLine = lastLine.slice(0, -1);
+        }
+        lines[lines.length - 1] = lastLine + (lastLine.length < lines[lines.length - 1].length ? '...' : '');
+    }
+    return { size: minSize, lines };
+}
+
+/**
+ * Draws adaptive centered multiline block with auto-calculated height
+ */
+function drawAdaptiveCenteredBlock(text, centerX, centerY, maxWidth, startSize, minSize, weight, color, maxLines = 2, customLineHeightRatio = 1.25) {
+    const fitted = fitTextToBox(text, maxWidth, maxLines, startSize, minSize, weight);
+    const lineHeight = fitted.size * customLineHeightRatio;
+    const totalHeight = (fitted.lines.length - 1) * lineHeight;
+    const startY = centerY - (totalHeight / 2);
+
+    ctx.textAlign = 'center';
+    setFont(weight, fitted.size);
+    ctx.fillStyle = color;
+
+    fitted.lines.forEach((line, i) => {
+        ctx.fillText(line, centerX, startY + (i * lineHeight));
+    });
+
+    return {
+        size: fitted.size,
+        lines: fitted.lines,
+        totalHeight: fitted.lines.length * lineHeight,
+        bottomY: startY + (fitted.lines.length * lineHeight)
+    };
+}
+
+/* =========================================================
+6. STATUS CANVAS RENDERING (1080×1920 HD) - OCCUPANCY-BASED ENGINE
+========================================================= */
+function drawStatusCanvas() {
+    const theme = THEMES[app.theme] || THEMES.corporate;
+    const W = canvas.width;  // 1080
+    const H = canvas.height; // 1920
+
+    // 1. BACKGROUND GRADIENT
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, theme.bg1);
+    bgGrad.addColorStop(1, theme.bg2);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // 2. AMBIENT GLOW & ACCENTS
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    ctx.beginPath();
+    ctx.arc(W + 60, -60, 540, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(-120, H + 120, 720, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. TOP BADGE
+    const badgeW = SAFE_BOUNDS.width;
+    const badgeX = SAFE_BOUNDS.xMin;
+    drawSafeRoundedRect(badgeX, 65, badgeW, 70, 35, 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.15)', 1.5);
+
+    ctx.textAlign = 'left';
+    setFont('700', 24);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('⚡  RESEARCH & RECRUITMENT', badgeX + 32, 109);
+
+    ctx.textAlign = 'right';
+    setFont('700', 24);
+    ctx.fillStyle = theme.text;
+    const fgdLabel = app.currentFgd ? `FGD ${app.currentFgd.id}` : 'FGD 1';
+    ctx.fillText(fgdLabel, SAFE_BOUNDS.xMax - 32, 109);
+
+    // 4. MAIN TITLE (Max 46px, min 28px, max 2 lines, anti-overflow)
+    const rawTitleVal = ($('mainTitleType').value === 'CUSTOM')
+        ? ($('customTitleVal').value.trim() || 'DICARI RESPONDEN FGD')
+        : $('mainTitleType').value;
+
+    const titleBlock = drawAdaptiveCenteredBlock(
+        rawTitleVal.toUpperCase(),
+        W / 2,
+        185,
+        SAFE_BOUNDS.width - 40,
+        46,
+        28,
+        '800',
+        theme.accent,
+        2,
+        1.2
+    );
+
+    // 5. SUBTITLE / TOPIC (Max 56px, min 30px, max 2 lines)
+    const rawTopicVal = cleanDanglingPunctuation($('studyTopicVal').value.trim()) || 'Consumer Research Study';
+    const topicTargetY = 255 + (titleBlock.lines.length > 1 ? 16 : 0);
+
+    const topicBlock = drawAdaptiveCenteredBlock(
+        rawTopicVal,
+        W / 2,
+        topicTargetY,
+        SAFE_BOUNDS.width - 60,
+        56,
+        30,
+        '800',
+        theme.text,
+        2,
+        1.22
+    );
+
+    // 6. METHOD SUBTITLE (Fully adaptive, max 27px, min 20px)
+    const methodRaw = app.mode === 'offline'
+        ? 'Diskusi Kelompok Terfokus • Hadir Langsung di Venue'
+        : 'Screening & Komunikasi Dilakukan Secara Daring';
+
+    const methodCenterY = topicBlock.bottomY + 30;
+    const methodBlock = drawAdaptiveCenteredBlock(
+        methodRaw,
+        W / 2,
+        methodCenterY,
+        SAFE_BOUNDS.width - 80,
+        27,
+        20,
+        '500',
+        theme.muted,
+        2,
+        1.2
+    );
+
+    // 7. PROFILE BADGES (DYNAMIC Y BASED ON HEADER EXTENSION)
+    const profileY = Math.max(380, methodBlock.bottomY + 22);
+    const profileH = 126;
+    const cardGap = 20;
+    const miniCardW = (SAFE_BOUNDS.width - cardGap) / 2;
+
+    // Card Kiri: Profil Target
+    const prof1X = SAFE_BOUNDS.xMin;
+    drawSafeRoundedRect(prof1X, profileY, miniCardW, profileH, 22, theme.cardInner, theme.border, 1.5);
+    ctx.textAlign = 'left';
+    setFont('700', 23);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('👤 PROFIL TARGET', prof1X + 24, profileY + 36);
+
+    const genderTxt = cleanDanglingPunctuation(safeValue($('inputGender').value, 'Belum terbaca'));
+    const adultAgeTxt = cleanDanglingPunctuation(safeValue($('inputAdultAge').value, 'Usia belum terbaca'));
+    const childAgeVal = cleanDanglingPunctuation($('inputChildAge') ? $('inputChildAge').value.trim() : '');
+
+    if (childAgeVal) {
+        drawAdaptiveCenteredBlock(genderTxt, prof1X + (miniCardW / 2), profileY + 63, miniCardW - 32, 23, 16, '700', theme.text, 1);
+        drawAdaptiveCenteredBlock(`${adultAgeTxt} (Anak: ${childAgeVal})`, prof1X + (miniCardW / 2), profileY + 98, miniCardW - 32, 20, 15, '500', theme.muted, 1);
+    } else {
+        // Upgraded bold values (up to 28px) for short crisp text
+        drawAdaptiveCenteredBlock(genderTxt, prof1X + (miniCardW / 2), profileY + 68, miniCardW - 32, 28, 17, '800', theme.text, 1);
+        drawAdaptiveCenteredBlock(adultAgeTxt, prof1X + (miniCardW / 2), profileY + 101, miniCardW - 32, 25, 16, '500', theme.muted, 1);
+    }
+
+    // Card Kanan: Kelas & Status
+    const prof2X = prof1X + miniCardW + cardGap;
+    drawSafeRoundedRect(prof2X, profileY, miniCardW, profileH, 22, theme.cardInner, theme.border, 1.5);
+    ctx.textAlign = 'left';
+    setFont('700', 23);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('🏷️ KELAS & PEKERJAAN', prof2X + 24, profileY + 36);
+
+    const sesTxt = cleanDanglingPunctuation(safeValue($('inputSes').value, 'SES belum terbaca'));
+    const occTxt = cleanDanglingPunctuation(safeValue($('inputOccupation').value, 'Pekerjaan belum terbaca'));
+    // Upgraded bold values (up to 28px)
+    drawAdaptiveCenteredBlock(sesTxt, prof2X + (miniCardW / 2), profileY + 68, miniCardW - 32, 28, 17, '800', theme.text, 1);
+    drawAdaptiveCenteredBlock(occTxt, prof2X + (miniCardW / 2), profileY + 101, miniCardW - 32, 25, 16, '500', theme.muted, 1);
+
+    // 8. MAIN CARD (AUTO VERTICAL BALANCING)
+    const mainCardX = SAFE_BOUNDS.xMin;
+    const mainCardY = profileY + profileH + 24;
+    const mainCardW = SAFE_BOUNDS.width;
+    const maxBottom = 1680; // Safe distance from footer
+    const mainCardH = maxBottom - mainCardY;
+
+    drawSafeRoundedRect(mainCardX, mainCardY, mainCardW, mainCardH, 36, theme.card, theme.border, 2);
+
+    let currY = mainCardY + 54;
+    const contentMaxW = mainCardW - (SAFE_BOUNDS.padding * 2);
+    const contentLeftX = mainCardX + SAFE_BOUNDS.padding;
+
+    // Logistics 1: Lokasi / Metode
+    ctx.textAlign = 'left';
+    setFont('700', 25);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('📍', contentLeftX, currY);
+    ctx.fillText('LOKASI / METODE', contentLeftX + 42, currY);
+
+    const defaultLoc = app.mode === 'offline' ? 'Offline • Venue ditentukan SPV' : 'Online • Tidak datang ke lokasi';
+    const locVal = cleanDanglingPunctuation(safeValue($('inputLocation').value, defaultLoc));
+    const locFitted = fitTextToBox(locVal, contentMaxW - 44, 3, 30, 20, '500');
+
+    currY += locFitted.size + 8;
+    setFont('500', locFitted.size);
+    ctx.fillStyle = theme.text;
+    for (const line of locFitted.lines) {
+        ctx.fillText(line, contentLeftX + 42, currY);
+        currY += locFitted.size * 1.35;
+    }
+
+    currY += 12;
+
+    // Logistics 2: Jadwal Pelaksanaan
+    ctx.textAlign = 'left';
+    setFont('700', 25);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('📅', contentLeftX, currY);
+    ctx.fillText('JADWAL PELAKSANAAN', contentLeftX + 42, currY);
+
+    const schedVal = cleanDanglingPunctuation(safeValue($('inputSchedule').value, 'Belum ditentukan'));
+    const schedFitted = fitTextToBox(schedVal, contentMaxW - 44, 2, 31, 20, '600');
+
+    currY += schedFitted.size + 8;
+    setFont('600', schedFitted.size);
+    ctx.fillStyle = theme.text;
+    for (const line of schedFitted.lines) {
+        ctx.fillText(line, contentLeftX + 42, currY);
+        currY += schedFitted.size * 1.35;
+    }
+
+    // Divider
+    currY += 12;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(contentLeftX, currY);
+    ctx.lineTo(contentLeftX + contentMaxW, currY);
+    ctx.stroke();
+
+    currY += 46;
+
+    // Section Header: Kriteria Utama Responden
+    ctx.textAlign = 'left';
+    setFont('800', 30);
+    ctx.fillStyle = theme.accent;
+    ctx.fillText('KRITERIA UTAMA RESPONDEN', contentLeftX, currY);
+
+    currY += 38;
+
+    // Clean, deduplicate, and remove dangling punctuation from criteria
+    const rawCriteriaInput = $('inputCriteria').value.split('\n');
+    let criteriaList = cleanAndDeduplicateCriteria(rawCriteriaInput);
+
+    if (criteriaList.length === 0) {
+        criteriaList = ['Kriteria responden belum tersedia'];
+    }
+
+    // 9. OCCUPANCY-BASED ADAPTIVE CRITERIA ENGINE (MAX 38px down to MIN 19px)
+    const cardBottomLimit = mainCardY + mainCardH - 42;
+    const availableCriteriaHeight = cardBottomLimit - currY;
+
+    let bestSize = 19;
+    let bestLineHeight = 1.36;
+    let bestItemGap = 8;
+    let bestPack = [];
+
+    // Iteratively test down from MAX_BULLET_SIZE = 38px to MIN_BULLET_SIZE = 19px
+    for (let s = 38; s >= 19; s--) {
+        const testPack = [];
+        let totalH = 0;
+        // Dynamic line height and item gap proportional to font size
+        const testLineHeight = (s >= 34) ? 1.45 : (s >= 30) ? 1.40 : (s >= 25) ? 1.36 : 1.28;
+        const testGap = (s >= 34) ? 18 : (s >= 30) ? 14 : (s >= 26) ? 10 : (s >= 22) ? 7 : 4;
+
+        for (let i = 0; i < criteriaList.length; i++) {
+            const wrapped = wrapSafeLines(criteriaList[i], contentMaxW - 44, s, '400');
+            testPack.push(wrapped);
+            totalH += (wrapped.length * s * testLineHeight) + (i < criteriaList.length - 1 ? testGap : 0);
+        }
+
+        // Target: Must comfortably fit within availableCriteriaHeight with breathing room
+        if (totalH <= availableCriteriaHeight * 0.94) {
+            bestSize = s;
+            bestLineHeight = testLineHeight;
+            bestItemGap = testGap;
+            bestPack = testPack;
+            break;
+        }
+
+        // Fallback for minimal size
+        if (s === 19) {
+            bestSize = 19;
+            bestLineHeight = 1.24;
+            bestItemGap = 3;
+            bestPack = testPack;
+        }
+    }
+
+    // Render Criteria with Dynamic Occupancy-Based Sizing
+    for (const wrappedLines of bestPack) {
+        for (let idx = 0; idx < wrappedLines.length; idx++) {
+            if (currY + (bestSize * 0.9) > cardBottomLimit) break;
+
+            setFont('400', bestSize);
+            ctx.fillStyle = theme.text;
+            if (idx === 0) {
+                ctx.fillText('• ' + wrappedLines[idx], contentLeftX, currY);
+            } else {
+                ctx.fillText('   ' + wrappedLines[idx], contentLeftX, currY);
+            }
+            currY += bestSize * bestLineHeight;
+        }
+        currY += bestItemGap;
+    }
+
+    // 10. FOOTER
+    const footerY = H - 120;
+    drawSafeRoundedRect(SAFE_BOUNDS.xMin, footerY - 45, SAFE_BOUNDS.width, 82, 22, 'rgba(255,255,255,0.06)', 'rgba(255,255,255,0.14)', 1);
+
+    ctx.textAlign = 'center';
+    setFont('700', 23);
+    ctx.fillStyle = theme.text;
+    ctx.fillText('Bhanie Recruitment & Fieldwork Specialist', W / 2, footerY - 2);
+
+    setFont('400', 18);
+    ctx.fillStyle = theme.muted;
+    const footerSub = app.mode === 'offline'
+        ? 'Riset Terpercaya • Konfirmasi Kehadiran Onsite Diperlukan'
+        : 'Riset Terpercaya • Pengumpulan Data Dilakukan Daring';
+    ctx.fillText(footerSub, W / 2, footerY + 26);
+}
+
+/* =========================================================
+7. REFACTORED AUDIT SYSTEM (NON-BLOCKING WARNINGS)
+========================================================= */
+function getAuditResult() {
+    const warnings = [];
+    let fatal = false;
+
+    // Technical fatal check
+    if (!canvas || typeof canvas.toDataURL !== 'function') {
+        fatal = true;
+    }
+
+    const gender = $('inputGender') ? $('inputGender').value.trim() : '';
+    const age = $('inputAdultAge') ? $('inputAdultAge').value.trim() : '';
+    const sched = $('inputSchedule') ? $('inputSchedule').value.trim() : '';
+    const ses = $('inputSes') ? $('inputSes').value.trim() : '';
+    const occ = $('inputOccupation') ? $('inputOccupation').value.trim() : '';
+    const criteria = $('inputCriteria') ? $('inputCriteria').value.trim() : '';
+
+    if (!gender || gender.toLowerCase().includes('belum')) {
+        warnings.push('Gender belum terbaca.');
+    }
+    if (!age || age.toLowerCase().includes('belum')) {
+        warnings.push('Usia belum terbaca.');
+    }
+    if (!sched || sched.length < 3 || sched.toLowerCase().includes('belum')) {
+        warnings.push('Jadwal pelaksanaan belum tersedia.');
+    }
+    if (!ses || ses.toLowerCase().includes('belum')) {
+        warnings.push('SES belum terbaca.');
+    }
+    if (!occ || occ.toLowerCase().includes('belum')) {
+        warnings.push('Pekerjaan belum terbaca.');
+    }
+    if (!criteria || criteria.length < 10) {
+        warnings.push('Kriteria responden belum terisi lengkap.');
+    }
+
+    return {
+        fatal,
+        warnings,
+        readyToDownload: !fatal
+    };
+}
+
+function runDataAudit() {
+    const audit = getAuditResult();
+    const box = $('auditStatusBox');
+    if (!box) return;
+
+    if (audit.fatal) {
+        box.className = 'mt-3 rounded-xl p-3 text-[11px] bg-rose-50 text-rose-900 border border-rose-300';
+        box.innerHTML = `
+            <div class="flex items-start gap-2">
+                <i data-lucide="x-circle" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+                <div>
+                    <b>Error Teknis:</b> Kanvas visual tidak dapat diakses di peramban ini.
+                </div>
+            </div>
+        `;
+    } else if (audit.warnings.length > 0) {
+        box.className = 'mt-3 rounded-xl p-3 text-[11px] bg-amber-50 text-amber-900 border border-amber-300';
+        box.innerHTML = `
+            <div class="flex items-start gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <div class="w-full">
+                    <div class="flex items-center justify-between">
+                        <b>🟡 Perlu Diperiksa (Informasi):</b>
+                        <span class="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Bisa Langsung Download</span>
+                    </div>
+                    <ul class="list-disc list-inside mt-1 space-y-0.5 text-slate-700">
+                        ${audit.warnings.map(i => `<li>${i}</li>`).join('')}
+                    </ul>
+                    <p class="text-[10px] text-amber-800 mt-2 font-medium">
+                        💡 Data masih dapat dilengkapi sebelum dipublikasikan. Gambar tetap siap diunduh.
+                    </p>
+                </div>
+            </div>
+        `;
+    } else {
+        box.className = 'mt-3 rounded-xl p-3 text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-300';
+        box.innerHTML = `
+            <div class="flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                <span><b>🟢 Data Lengkap!</b> Seluruh field utama terisi dan siap dipublikasikan.</span>
+            </div>
+        `;
+    }
+    lucide.createIcons();
+}
+
+/* =========================================================
+8. EVENT HANDLERS & INTERACTIONS
+========================================================= */
+
+// Switch Offline / Online Mode
+function switchAppMode(newMode) {
+    app.mode = newMode;
+    $('offlineTabBtn').classList.toggle('active', newMode === 'offline');
+    $('onlineTabBtn').classList.toggle('active', newMode === 'online');
+
+    if (newMode === 'offline') {
+        $('modeStatusText').textContent = 'Offline Onsite';
+        $('modeStatusText').className = 'text-[10px] font-bold text-emerald-700';
+        $('modeExplanation').innerHTML = '<b>Offline:</b> Responden wajib hadir langsung ke venue/lokasi FGD yang telah ditentukan.';
+        $('inputLocation').value = 'Offline • Venue ditentukan SPV';
+    } else {
+        $('modeStatusText').textContent = 'Online Daring';
+        $('modeStatusText').className = 'text-[10px] font-bold text-indigo-700';
+        $('modeExplanation').innerHTML = '<b>Online:</b> Responden tidak datang ke lokasi. Komunikasi dan screening dilakukan secara online.';
+        $('inputLocation').value = 'Online • Tidak datang ke lokasi';
+    }
+
+    if (app.currentFgd) app.currentFgd.mode = newMode;
+    runDataAudit();
+    drawStatusCanvas();
+}
+
+$('offlineTabBtn').onclick = () => switchAppMode('offline');
+$('onlineTabBtn').onclick = () => switchAppMode('online');
+
+// Handle File Selection
+function handleUploadedImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+        notify('Mohon pilih file gambar (JPG, PNG, WebP).', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            app.sourceImage = img;
+            $('previewImgTag').src = e.target.result;
+            $('fileNamePreview').textContent = file.name || 'Screenshot SPV';
+
+            $('dropEmptyState').classList.add('hidden');
+            $('dropFilledState').classList.remove('hidden');
+            $('runAnalysisBtn').disabled = false;
+
+            $('appStatusBadge').textContent = 'SIAP SCAN';
+            $('appStatusBadge').className = 'text-[9px] font-extrabold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200';
+            notify('Screenshot siap dianalisis.', 'info');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+$('screenshotInput').addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (file) handleUploadedImageFile(file);
+});
+
+// Drag and Drop
+const dropArea = $('dropZoneArea');
+['dragenter', 'dragover'].forEach(evt => {
+    dropArea.addEventListener(evt, e => {
+        e.preventDefault();
+        dropArea.classList.add('border-indigo-500', 'bg-indigo-50');
+    });
+});
+['dragleave', 'drop'].forEach(evt => {
+    dropArea.addEventListener(evt, e => {
+        e.preventDefault();
+        dropArea.classList.remove('border-indigo-500', 'bg-indigo-50');
+    });
+});
+dropArea.addEventListener('drop', e => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleUploadedImageFile(file);
+});
+
+// Clipboard Paste (Ctrl + V)
+window.addEventListener('paste', e => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+                handleUploadedImageFile(file);
+                notify('Screenshot berhasil ditempel dari Clipboard!', 'success');
+                break;
+            }
+        }
+    }
+});
+
+// Clear / Reset Image
+$('clearImageBtn').onclick = () => {
+    app.sourceImage = null;
+    app.rawText = '';
+    app.fgdList = [];
+    app.currentFgd = null;
+
+    $('screenshotInput').value = '';
+    $('dropEmptyState').classList.remove('hidden');
+    $('dropFilledState').classList.add('hidden');
+    $('runAnalysisBtn').disabled = true;
+    $('ocrBox').classList.add('hidden');
+    $('fgdSelectionSection').classList.add('hidden');
+    $('dataEditorSection').classList.add('hidden');
+
+    $('appStatusBadge').textContent = 'SIAP';
+    $('appStatusBadge').className = 'text-[9px] font-extrabold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
+    notify('Form telah direset.', 'info');
+    drawStatusCanvas();
+};
+
+function updateOcrProgress(percent, msg) {
+    $('ocrBox').classList.remove('hidden');
+    $('ocrBarFill').style.width = percent + '%';
+    $('ocrPct').textContent = Math.round(percent) + '%';
+    $('ocrMsg').innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> ${msg}`;
+    lucide.createIcons();
+}
+
+// Run OCR Analysis
+$('runAnalysisBtn').onclick = async () => {
+    if (!app.sourceImage) return;
+    $('runAnalysisBtn').disabled = true;
+
+    try {
+        updateOcrProgress(8, 'Mempersiapkan screenshot tabel SPV...');
+        const preparedCanvas = prepareImageForOcr(app.sourceImage);
+
+        updateOcrProgress(18, 'Membaca teks kolom tabel...');
+        const result = await Tesseract.recognize(
+            preparedCanvas,
+            'ind+eng',
+            {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        updateOcrProgress(20 + m.progress * 74, `Membaca karakter (${Math.round(m.progress * 100)}%)...`);
+                    }
+                }
+            }
+        );
+
+        app.rawText = normalizeOcrRawText(result.data.text);
+
+        updateOcrProgress(96, 'Membedah baris FGD 1–6...');
+        buildIsolatedFgds(app.rawText);
+
+        updateOcrProgress(100, 'Selesai!');
+        setTimeout(() => $('ocrBox').classList.add('hidden'), 800);
+
+        $('appStatusBadge').textContent = 'DATA SIAP';
+        $('appStatusBadge').className = 'text-[9px] font-extrabold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        notify('Tabel SPV berhasil dianalisis! Pilih FGD untuk diperiksa.', 'success');
+
+    } catch (err) {
+        console.error(err);
+        notify('OCR gagal membaca tabel. Silakan gunakan Input Manual.', 'error');
+        $('appStatusBadge').textContent = 'OCR GAGAL';
+        $('appStatusBadge').className = 'text-[9px] font-extrabold px-3 py-1.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
+    } finally {
+        $('runAnalysisBtn').disabled = false;
+    }
+};
+
+/* =========================================================
+9. FGD LIST & ISOLATED SELECTION
+========================================================= */
+function buildIsolatedFgds(fullText) {
+    const ids = extractValidFgdIds(fullText);
+
+    if (ids.length === 0) {
+        app.fgdList = [parseIsolatedFgd(1, fullText)];
+    } else {
+        app.fgdList = ids.map(id => parseIsolatedFgd(id, sliceFgdTableBlock(fullText, id, ids)));
+    }
+
+    renderFgdSelectionButtons();
+    if (app.fgdList.length > 0) {
+        selectFgd(app.fgdList[0]);
+    }
+}
+
+function getFgdQualityStatus(fgd) {
+    const c = fgd.confidence || {};
+    const hasMissing = Object.values(c).includes('MISSING');
+    const hasLow = Object.values(c).includes('LOW');
+
+    if (!hasMissing && !hasLow && fgd.adultAge && fgd.gender && fgd.schedule) {
+        return { label: '🟢 DATA LENGKAP', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+    }
+    if (!fgd.adultAge || !fgd.gender || !fgd.schedule) {
+        return { label: '🔴 DATA KURANG', color: 'text-rose-700 bg-rose-50 border-rose-200' };
+    }
+    return { label: '🟡 PERLU CEK', color: 'text-amber-700 bg-amber-50 border-amber-200' };
+}
+
+function renderFgdSelectionButtons() {
+    $('fgdSelectionSection').classList.remove('hidden');
+    $('fgdButtonContainer').innerHTML = '';
+    $('fgdSummaryBadge').textContent = `${app.fgdList.length} Sesi Terbaca`;
+
+    app.fgdList.forEach(fgd => {
+        const quality = getFgdQualityStatus(fgd);
+        const btn = document.createElement('button');
+        btn.className = 'fgd-chip flex flex-col justify-between';
+        btn.innerHTML = `
+            <div class="flex items-center justify-between w-full">
+                <span class="text-sm font-extrabold text-slate-900">FGD ${fgd.id}</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${quality.color}">${quality.label}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 line-clamp-1 mt-1 text-left">
+                ${fgd.schedule || 'Jadwal belum ditentukan'}
+            </div>
+        `;
+        btn.onclick = () => selectFgd(fgd);
+        $('fgdButtonContainer').appendChild(btn);
+    });
+}
+
+function selectFgd(fgd) {
+    app.currentFgd = fgd;
+
+    document.querySelectorAll('.fgd-chip').forEach((b, idx) => {
+        b.classList.toggle('active', app.fgdList[idx] === fgd);
+    });
+
+    $('dataEditorSection').classList.remove('hidden');
+    $('activeFgdTag').textContent = `FGD ${fgd.id}`;
+
+    const quality = getFgdQualityStatus(fgd);
+    $('activeFgdQuality').textContent = quality.label;
+    $('activeFgdQuality').className = `text-[10px] font-bold px-2 py-0.5 rounded border ${quality.color}`;
+
+    // Fill form fields
+    $('inputGender').value = fgd.gender || '';
+    $('inputAdultAge').value = fgd.adultAge || '';
+    $('inputSes').value = fgd.ses || '';
+    $('inputOccupation').value = fgd.occupation || '';
+    $('inputSchedule').value = fgd.schedule || '';
+    $('inputChildAge').value = fgd.childAge || '';
+
+    // Field confidence badges
+    const confBadge = (status) => {
+        if (status === 'HIGH') return `<span class="text-emerald-600 font-bold">🟢 Terbaca</span>`;
+        if (status === 'MEDIUM') return `<span class="text-amber-600 font-bold">🟡 Perlu diperiksa</span>`;
+        return `<span class="text-rose-600 font-bold">🔴 Belum terbaca</span>`;
+    };
+
+    $('targetConfBadge').innerHTML = confBadge(fgd.confidence.gender === 'HIGH' && fgd.confidence.age === 'HIGH' ? 'HIGH' : 'MEDIUM');
+    $('classConfBadge').innerHTML = confBadge(fgd.confidence.ses);
+    $('scheduleConfBadge').innerHTML = confBadge(fgd.confidence.schedule);
+
+    if (app.mode === 'offline') {
+        $('inputLocation').value = 'Offline • Venue ditentukan SPV';
+    } else {
+        $('inputLocation').value = 'Online • Tidak datang ke lokasi';
+    }
+
+    $('inputCriteria').value = fgd.criteria.map(c => `• ${c}`).join('\n');
+
+    runDataAudit();
+    drawStatusCanvas();
+}
+
+// Title Type Listener
+$('mainTitleType').addEventListener('change', () => {
+    $('customTitleVal').classList.toggle('hidden', $('mainTitleType').value !== 'CUSTOM');
+    drawStatusCanvas();
+});
+$('customTitleVal').addEventListener('input', drawStatusCanvas);
+$('studyTopicVal').addEventListener('input', drawStatusCanvas);
+
+// Inputs Live Synchronization
+[
+    'inputGender', 'inputAdultAge', 'inputSes', 'inputOccupation',
+    'inputChildAge', 'inputSchedule', 'inputLocation', 'inputCriteria'
+].forEach(id => {
+    $(id).addEventListener('input', () => {
+        runDataAudit();
+        drawStatusCanvas();
+    });
+});
+
+// Clean & Deduplicate Criteria Button
+$('cleanCriteriaBtn').onclick = () => {
+    const rawLines = $('inputCriteria').value.split('\n');
+    const cleaned = cleanAndDeduplicateCriteria(rawLines);
+    $('inputCriteria').value = cleaned.map(l => `• ${l}`).join('\n');
+    notify('Kriteria berhasil dirapikan dan duplikat/tanda baca dibersihkan.', 'success');
+    runDataAudit();
+    drawStatusCanvas();
+};
+
+// Apply Manual Input
+$('processManualBtn').onclick = () => {
+    const manualTxt = normalizeOcrRawText($('rawManualText').value);
+    if (!manualTxt) {
+        notify('Silakan tulis data manual terlebih dahulu.', 'error');
+        return;
+    }
+    app.fgdList = [parseIsolatedFgd(1, manualTxt)];
+    renderFgdSelectionButtons();
+    selectFgd(app.fgdList[0]);
+    notify('Data manual berhasil diterapkan!', 'success');
+};
+
+// Theme Switching
+document.querySelectorAll('.theme-pill').forEach(btn => {
+    btn.onclick = () => {
+        app.theme = btn.dataset.theme;
+        document.querySelectorAll('.theme-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        drawStatusCanvas();
+    };
+});
+
+// Step 5 Trigger: Apply to Canvas
+$('applyToCanvasBtn').onclick = () => {
+    runDataAudit();
+    drawStatusCanvas();
+    document.querySelector('.sticky-preview').scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+    notify('Status WhatsApp berhasil diperbarui!', 'success');
+};
+
+// Download PNG: Always available unless technical fatal error
+$('downloadImageBtn').onclick = () => {
+    const audit = getAuditResult();
+
+    try {
+        drawStatusCanvas();
+
+        if (audit.fatal) {
+            notify('Gambar belum dapat dibuat karena terjadi kendala teknis canvas.', 'error');
+            return;
+        }
+
+        const fgdId = app.currentFgd ? app.currentFgd.id : 1;
+        const link = document.createElement('a');
+        link.download = `Bhanie_FGD_${fgdId}_Status_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+
+        if (audit.warnings.length > 0) {
+            notify(`Gambar berhasil diunduh (${audit.warnings.length} data perlu diperiksa).`, 'info');
+        } else {
+            notify('Gambar HD (1080×1920) berhasil diunduh!', 'success');
+        }
+    } catch (err) {
+        console.error('Error saat download:', err);
+        notify('Gagal mengunduh gambar karena kendala teknis browser.', 'error');
+    }
+};
+
+// Demo Data Loader (3 Key Scenarios)
+$('demoBtn').onclick = () => {
+    switchAppMode('online');
+    app.fgdList = [
+        {
+            id: 1,
+            mode: 'online',
+            gender: 'Perempuan',
+            adultAge: '17–22 tahun',
+            childAge: '',
+            ses: 'SES A–B',
+            occupation: 'Kuliah',
+            demography: 'MAHASISWI AKTIF',
+            schedule: 'Senin, 21 September 2026 • 10.00',
+            confidence: { gender: 'HIGH', age: 'HIGH', ses: 'HIGH', schedule: 'HIGH', occupation: 'HIGH' },
+            criteria: [
+                'Gender: Perempuan',
+                'Usia: 17–22 tahun',
+                'SES: A–B',
+                'Pekerjaan: Kuliah'
+            ]
+        },
+        {
+            id: 2,
+            mode: 'offline',
+            gender: 'Perempuan',
+            adultAge: '28–35 tahun',
+            childAge: '6–9 tahun',
+            ses: 'SES A–C',
+            occupation: 'IRT / Bekerja',
+            demography: 'MOMS WITH KIDS',
+            schedule: 'Selasa, 22 September 2026 • 09.30',
+            confidence: { gender: 'HIGH', age: 'HIGH', ses: 'HIGH', schedule: 'HIGH', occupation: 'HIGH' },
+            criteria: [
+                'Target: MOMS WITH KIDS',
+                'Gender: Perempuan',
+                'Usia: 28–35 tahun',
+                'Usia Anak: 6–9 tahun',
+                'SES: A–C',
+                'Pekerjaan: IRT / Bekerja',
+                'Rutin sarapan sereal bersama keluarga'
+            ]
+        },
+        {
+            id: 3,
+            mode: 'offline',
+            gender: 'Pria & Perempuan',
+            adultAge: '28–33 tahun / 28–35 tahun',
+            childAge: '10–12 tahun',
+            ses: 'SES B–C',
+            occupation: 'Bekerja / Wirausaha',
+            demography: 'DEWASA ENERGEN / REGULAR LAPSERS / LIGHT USERS',
+            schedule: 'Rabu, 23 September 2026 • 13.30',
+            confidence: { gender: 'HIGH', age: 'HIGH', ses: 'HIGH', schedule: 'HIGH', occupation: 'HIGH' },
+            criteria: [
+                'Target: DEWASA ENERGEN / REGULAR LAPSERS / LIGHT USERS',
+                'Gender: Pria & Perempuan',
+                'Usia: 28–33 tahun / 28–35 tahun',
+                'Usia Anak: 10–12 tahun',
+                'Pekerjaan: Bekerja / Wirausaha',
+                'DEWASA ENERGEN 3x/bulan',
+                'REGULAR LAPSERS: Pernah mengonsumsi produk susu',
+                'Mengonsumsi ENERGEN 4',
+                'Bersedia hadir tepat waktu di venue riset'
+            ]
+        }
+    ];
+
+    renderFgdSelectionButtons();
+    selectFgd(app.fgdList[0]);
+    notify('Contoh data (3 skenario font & occupancy) berhasil dimuat!', 'success');
+};
+
+/* =========================================================
+10. INITIALIZATION
+========================================================= */
+switchAppMode('offline');
+lucide.createIcons();
+
+document.fonts.ready.then(() => {
+    drawStatusCanvas();
+});
+</script>
+</body>
+</html>
+```
